@@ -139,12 +139,13 @@ export function createGrabInstance(options?: Partial<AngularGrabOptions>): Angul
   }
 
   // --- History management ---
-  function addHistoryEntry(context: ElementContext, snippet: string): void {
+  function addHistoryEntry(context: ElementContext, snippet: string, comment?: string): void {
     const entry: HistoryEntry = {
       id: nextId(),
       context: toHistoryContext(context),
       snippet,
       timestamp: Date.now(),
+      comment,
     };
 
     lastSelectedElement = new WeakRef(context.element);
@@ -221,25 +222,18 @@ export function createGrabInstance(options?: Partial<AngularGrabOptions>): Angul
 
       if (pending) {
         await executePendingAction(pending, element);
-        // Comment flow keeps picker active
         if (pending.type !== 'comment') {
           doDeactivate();
         }
         return;
       }
 
-      // Default copy flow
-      const result = await copyElement(element, {
-        getComponentResolver: () => componentResolver,
-        getSourceResolver: () => sourceResolver,
-        getMaxContextLines: () => store.state.options.maxContextLines,
-        pluginRegistry,
-      });
-
-      if (result) {
-        showSelectFeedback(element);
-        addHistoryEntry(result.context, result.snippet);
-      }
+      // Build context then wait for comment before copying
+      const context = buildElementContext(element, componentResolver, sourceResolver);
+      lastSelectedElement = new WeakRef(element);
+      lastSelectedContext = context;
+      showSelectFeedback(element);
+      toolbar.showCommentInput();
     },
   });
 
@@ -349,6 +343,28 @@ export function createGrabInstance(options?: Partial<AngularGrabOptions>): Angul
       store.state.toolbar = { ...store.state.toolbar, visible: false };
       toolbar.hide();
     },
+
+    async onCommentSubmit(comment: string) {
+      if (lastSelectedContext) {
+        const maxLines = store.state.options.maxContextLines;
+        const { ok, full } = await copyWithComment(
+          lastSelectedContext,
+          comment,
+          maxLines,
+          pluginRegistry,
+        );
+        if (ok) {
+          addHistoryEntry(lastSelectedContext, full, comment);
+        }
+      }
+      toolbar.hideCommentInput();
+      doDeactivate();
+    },
+
+    onCommentCancel() {
+      toolbar.hideCommentInput();
+      doDeactivate();
+    },
   });
 
   // --- History Popover ---
@@ -420,7 +436,11 @@ export function createGrabInstance(options?: Partial<AngularGrabOptions>): Angul
   const commentPopover = createCommentPopover({
     async onSubmit(comment: string) {
       if (lastSelectedContext) {
-        await copyWithComment(lastSelectedContext, comment, store.state.options.maxContextLines, pluginRegistry);
+        const maxLines = store.state.options.maxContextLines;
+        const { ok, full } = await copyWithComment(lastSelectedContext, comment, maxLines, pluginRegistry);
+        if (ok) {
+          addHistoryEntry(lastSelectedContext, full, comment);
+        }
       }
       if (store.state.active) {
         doDeactivate();
