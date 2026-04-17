@@ -320,6 +320,7 @@ export function createToolbarRenderer(callbacks: ToolbarCallbacks): ToolbarRende
         if (e.key === 'Enter') {
           e.preventDefault();
           const comment = commentInput!.value.trim();
+          if (!comment) return;
           container!.classList.remove('ag-comment-mode');
           detachCommentKey();
           callbacks.onCommentSubmit(comment);
