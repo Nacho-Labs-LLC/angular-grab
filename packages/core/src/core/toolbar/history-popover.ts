@@ -77,6 +77,9 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
         visibility: visible;
       }
       #${POPOVER_ID} .ag-history-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
         padding: 10px 14px 8px;
         font-size: 11px;
         font-weight: 600;
@@ -84,6 +87,25 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
         letter-spacing: 0.05em;
         color: var(--ag-text-muted, #64748b);
         border-bottom: 1px solid var(--ag-popover-border, #1e293b);
+      }
+      #${POPOVER_ID} .ag-history-copy-all {
+        font-size: 11px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--ag-accent, #3b82f6);
+        background: transparent;
+        border: 1px solid var(--ag-accent, #3b82f6);
+        border-radius: 6px;
+        padding: 2px 8px;
+        cursor: pointer;
+        line-height: 1.5;
+        transition: background 0.1s ease, color 0.1s ease;
+        font-family: inherit;
+      }
+      #${POPOVER_ID} .ag-history-copy-all:hover {
+        background: var(--ag-accent, #3b82f6);
+        color: #fff;
       }
       #${POPOVER_ID} .ag-history-empty {
         padding: 24px 14px;
@@ -117,17 +139,26 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
         flex: 1;
         min-width: 0;
       }
-      #${POPOVER_ID} .ag-history-selector {
-        font: 12px/1.3 ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-        color: var(--ag-popover-text, #e2e8f0);
+      #${POPOVER_ID} .ag-history-comment-title {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ag-accent, #3b82f6);
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
+      #${POPOVER_ID} .ag-history-selector {
+        font: 11px/1.3 ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+        color: var(--ag-text-muted, #64748b);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-top: 2px;
+      }
       #${POPOVER_ID} .ag-history-meta {
         font-size: 11px;
         color: var(--ag-text-muted, #64748b);
-        margin-top: 2px;
+        margin-top: 1px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -164,7 +195,8 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
   function render(entries: HistoryEntry[]): void {
     const el = ensurePopover();
 
-    let html = '<div class="ag-history-header">History</div>';
+    const hasCopyAll = entries.length > 0;
+    let html = `<div class="ag-history-header"><span>History</span>${hasCopyAll ? '<button class="ag-history-copy-all" data-ag-copy-all>Copy all</button>' : ''}</div>`;
 
     if (entries.length === 0) {
       html += '<div class="ag-history-empty">No elements grabbed yet</div>';
@@ -181,8 +213,12 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
           meta += `${sep}<a class="ag-history-file-link" href="${escapeHtml(uri)}" title="Open in VS Code">${fileName}</a>`;
         }
 
-        html += `<button class="ag-history-item" data-ag-history-id="${escapeHtml(entry.id)}" aria-label="Re-copy ${selector}">`;
+        const ariaLabel = entry.comment ? escapeHtml(entry.comment) : selector;
+        html += `<button class="ag-history-item" data-ag-history-id="${escapeHtml(entry.id)}" aria-label="Re-copy ${ariaLabel}">`;
         html += `<div class="ag-history-info">`;
+        if (entry.comment) {
+          html += `<div class="ag-history-comment-title">${escapeHtml(entry.comment)}</div>`;
+        }
         html += `<div class="ag-history-selector">${selector}</div>`;
         if (meta) html += `<div class="ag-history-meta">${meta}</div>`;
         html += `</div>`;
@@ -205,6 +241,31 @@ export function createHistoryPopover(callbacks: HistoryPopoverCallbacks): Histor
         }
       });
     });
+
+    const copyAllBtn = el.querySelector('[data-ag-copy-all]');
+    if (copyAllBtn) {
+      copyAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const text = formatAllEntries(entries);
+        navigator.clipboard.writeText(text).then(() => {
+          const btn = copyAllBtn as HTMLButtonElement;
+          const prev = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => { btn.textContent = prev; }, 1500);
+        });
+      });
+    }
+  }
+
+  function formatAllEntries(entries: HistoryEntry[]): string {
+    if (entries.length === 1) {
+      const e = entries[0];
+      return e.comment ? `${e.comment}\n\n${e.snippet}` : e.snippet;
+    }
+    return entries.map((e, i) => {
+      const label = e.comment ? `[${i + 1}] ${e.comment}` : `[${i + 1}]`;
+      return `${label}\n\n${e.snippet}`;
+    }).join('\n\n---\n\n');
   }
 
   return {
