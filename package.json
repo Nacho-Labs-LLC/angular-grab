@@ -1,8 +1,16 @@
 {
   "version": "1.0.4",
   "description": "Grab any element in your Angular app and give it to AI coding agents",
-  "author": "Nate Richardson <hello@naterichardson.com>",
+  "author": "Nate Richardson <hello@nacholabs.net>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nacho-Labs-LLC/angular-grab.git"
+  },
+  "homepage": "https://angular-grab.com",
+  "bugs": {
+    "url": "https://github.com/Nacho-Labs-LLC/angular-grab/issues"
+  },
   "engines": {
     "node": ">=18"
   },

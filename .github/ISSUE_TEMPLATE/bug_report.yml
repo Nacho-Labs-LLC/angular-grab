@@ -1,0 +1,40 @@
+name: Bug Report
+description: Something isn't working as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Minimal code or steps to reproduce.
+      render: typescript
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: "1.0.4"
+    validations:
+      required: true
+
+  - type: input
+    id: angular-version
+    attributes:
+      label: Angular version
+      placeholder: "19.0.0"
+
+  - type: input
+    id: node-version
+    attributes:
+      label: Node.js version
+      placeholder: "22.0.0"
