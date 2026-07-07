@@ -1,5 +1,9 @@
 # angular-grab
 
+> **Deprecated:** angular-grab has been superseded by [point-grab](https://point-grab.com). For new work, use point-grab instead.
+>
+> MCP users should use `@point-grab/mcp-server` instead.
+>
 > Grab any element in your Angular app and give it to AI coding agents
 
 Point at any element and press **Cmd+C** (Mac) or **Ctrl+C** (Windows/Linux) to copy the component name, file path, and HTML source code to your clipboard. Paste it into Claude, ChatGPT, Copilot, or any AI coding agent for instant context.
